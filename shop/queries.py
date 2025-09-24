@@ -210,3 +210,47 @@ def discountProductsIfStockLow(threshold: int, discount: Decimal):
         stock__lt=threshold).update(price=F('price') - discount)
     print(f"Discount applied to {updated_count} products.")
     return updated_count
+
+# Relationships
+
+
+def getOrdersByCustomer(customerId: int):
+
+    orders = Order.objects.filter(customer__id=customerId)
+    result = dict(total=orders.count(), orders=orders)
+    print(result)
+    return result
+
+
+def getOrderItems(orderId: int):
+
+    items = OrderItem.objects.filter(order__id=orderId)
+    result = dict(total=items.count(), items=items)
+    print(result)
+    return result
+
+
+def getCustomerOrderProducts(customerId: int):
+
+    products = Product.objects.filter(
+        orderItems__order__customer__id=customerId).distinct()
+
+    result = dict(total=products.count(), products=products)
+    print(result)
+    return result
+
+
+def getOrdersWithCustomer():
+
+    orders = Order.objects.select_related('customer').all()
+    result = dict(total=orders.count(), orders=orders)
+    print(result)
+    return result
+
+
+def getOrdersWithItemsAndProducts():
+
+    orders = Order.objects.prefetch_related('orderItems__product').all()
+    result = dict(total=orders.count(), orders=orders)
+    print(result)
+    return result
