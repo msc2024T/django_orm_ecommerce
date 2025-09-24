@@ -1,5 +1,6 @@
 from .models import Customer, Order, OrderItem, Product
 from decimal import Decimal
+from django.db.models import Q, F
 
 # crud basics - create
 
@@ -173,3 +174,39 @@ def getLatestOrder():
     order = Order.objects.all().order_by('created_at').last()
     print(order)
     return order
+
+
+# Q & F Expressions
+
+def searchProductByNameorPrice(name: str, price: Decimal):
+
+    products = Product.objects.filter(
+        Q(name__icontains=name) | Q(price__lt=price))
+    result = dict(total=products.count(), products=products)
+    print(result)
+    return result
+
+
+def getOrdersByCustomerOrYear(customerId: int, year: int):
+
+    orders = Order.objects.filter(
+        Q(customer__id=customerId) | Q(created_at__year=year))
+    result = dict(total=orders.count(), orders=orders)
+    print(result)
+    return result
+
+
+def compareStockAndQuantity(productId: int, quantity: int):
+
+    product = Product.objects.filter(id=productId, stock__gte=quantity).first()
+
+    print(product)
+    return (product)
+
+
+def discountProductsIfStockLow(threshold: int, discount: Decimal):
+
+    updated_count = Product.objects.filter(
+        stock__lt=threshold).update(price=F('price') - discount)
+    print(f"Discount applied to {updated_count} products.")
+    return updated_count
