@@ -136,7 +136,7 @@ def addOrderItem(ordeId: int, productId: int, quantity: int):
 def getProductsCheaperThan(price: Decimal):
 
     products = Product.objects.filter(price__lt=price)
-    result = dict(total=products.count(), product=products)
+    result = dict(total=products.count(), products=products)
     print(result)
     return result
 
