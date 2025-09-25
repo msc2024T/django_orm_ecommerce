@@ -1,6 +1,6 @@
 from .models import Customer, Order, OrderItem, Product
 from decimal import Decimal
-from django.db.models import Q, F, Count, Avg, Sum, ExpressionWrapper, DecimalField
+from django.db.models import Q, F, Count, Avg, Sum, ExpressionWrapper, DecimalField, OuterRef, Subquery, Max, BooleanField, Window, functions
 
 # crud basics - create
 
@@ -294,3 +294,76 @@ def getOrderTotalItems(orderId: int):
         order__id=orderId).aggregate(total=Sum('quantity'))
     print(totalItems)
     return totalItems
+
+# Advanced Queries
+
+
+def getMostExpensiveProductPerOrder():
+
+    most_expensive_price = OrderItem.objects.filter(order=OuterRef('id')).values(
+        'order').annotate(max_price=Max('product__price')).values('max_price')
+
+    orders = Order.objects.annotate(
+        most_expensive_price=Subquery(most_expensive_price))
+
+    result = [
+        {
+            'order_id': order.id,
+            'most_expensive_price': order.most_expensive_price
+        }
+        for order in orders
+    ]
+
+    print(result)
+    return result
+
+
+def getOrdersWithExpensiveFlag(threshold: Decimal):
+
+    total_price = OrderItem.objects.filter(order=OuterRef('id')).values('order').annotate(
+        total_price=Sum(F('quantity') * F('product__price'))).values('total_price')
+
+    orders = Order.objects.annotate(
+        total_price=Subquery(total_price),
+        is_expensive=ExpressionWrapper(
+            F('total_price') > threshold,
+            output_field=BooleanField()
+        )
+    )
+
+    return orders
+
+
+def getCustomersWithLatestOrderDate():
+
+    Latest_customer_order = Order.objects.filter(customer=OuterRef(
+        'id')).order_by('-created_at').values('created_at')[:1]
+
+    customers = Customer.objects.annotate(
+        Latest_order=Subquery(Latest_customer_order))
+
+    return customers
+
+
+def getOrdersRankedByTotalPrice():
+
+    orders = Order.objects.annotate(
+        total_price=Sum(F('orderItems__quantity') *
+                        F('orderItems__product__price')),
+        rank=Window(
+            expression=functions.Rank(),
+            order_by=F('total_price').desc()
+        )
+    )
+
+    result = [
+        {
+            'order_id': order.id,
+            'total_price': order.total_price,
+            'rank': order.rank
+        }
+        for order in orders
+    ]
+
+    print(result)
+    return result
