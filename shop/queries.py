@@ -1,6 +1,6 @@
 from .models import Customer, Order, OrderItem, Product
 from decimal import Decimal
-from django.db.models import Q, F
+from django.db.models import Q, F, Count, Avg, Sum, ExpressionWrapper, DecimalField
 
 # crud basics - create
 
@@ -254,3 +254,43 @@ def getOrdersWithItemsAndProducts():
     result = dict(total=orders.count(), orders=orders)
     print(result)
     return result
+
+
+# Aggregations & Annotations
+def getTotalOrders():
+
+    totalOrders = Order.objects.aggregate(total=Count('id'))
+    print(totalOrders)
+    return totalOrders
+
+
+def getAverageProductPrice():
+
+    averagePrice = Product.objects.aggregate(average=Avg('price'))
+    print(averagePrice)
+    return averagePrice
+
+
+def getTotalSalesAmount():
+
+    totalSales = OrderItem.objects.aggregate(
+        ExpressionWrapper(Sum(F('product__price') * F('quantity')), output_field=DecimalField(max_digits=10, decimal_places=2)
+                          ))
+    print(totalSales)
+    return totalSales
+
+
+def getCustomerOrderCounts():
+
+    customers = Customer.objects.annotate(order_count=Count('orders'))
+    result = dict(total=customers.count(), customers=list(customers))
+    print(result)
+    return result
+
+
+def getOrderTotalItems(orderId: int):
+
+    totalItems = OrderItem.objects.filter(
+        order__id=orderId).aggregate(total=Sum('quantity'))
+    print(totalItems)
+    return totalItems
