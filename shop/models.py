@@ -1,4 +1,5 @@
 from django.db import models
+from django.contrib.postgres.fields import ArrayField
 
 
 class Customer(models.Model):
@@ -40,3 +41,22 @@ class OrderItem(models.Model):
 
     def __str__(self):
         return f'order item id: #{self.id} order id: #{self.order.id} product name: {self.product.name}'
+
+
+class Review(models.Model):
+
+    product = models.ForeignKey(
+        Product, on_delete=models.CASCADE, related_name='review')
+    Customer = models.ForeignKey(
+        Customer, on_delete=models.CASCADE, related_name='review')
+    data = models.JSONField()
+
+    def __str__(self):
+
+        return f' review #{self.id} about {self.product.name} from {Customer.name}'
+
+
+class Tag(models.Model):
+    product = models.ForeignKey(
+        Product, on_delete=models.CASCADE, related_name="tags")
+    keywords = ArrayField(models.CharField(max_length=50))

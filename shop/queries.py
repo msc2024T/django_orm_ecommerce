@@ -1,4 +1,4 @@
-from .models import Customer, Order, OrderItem, Product
+from .models import Customer, Order, OrderItem, Product, Review
 from decimal import Decimal
 from django.db.models import Q, F, Count, Avg, Sum, ExpressionWrapper, DecimalField, OuterRef, Subquery, Max, BooleanField, Window, functions
 
@@ -367,3 +367,22 @@ def getOrdersRankedByTotalPrice():
 
     print(result)
     return result
+
+
+# PostgreSQL Extras
+
+def getFiveStarReviews():
+
+    filtered_revs = Review.objects.filter(Q(data__rating=5))
+
+    return filtered_revs
+
+
+def getProductsWithTag(tag: str):
+
+    products = Product.objects.filter(
+        Q(tags__keywords__contains=[tag])
+    ).distinct()
+
+    print(products)
+    return products
